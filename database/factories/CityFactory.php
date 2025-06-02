@@ -13,8 +13,8 @@ class CityFactory extends Factory
     public function definition(): array
     {
         return [
-            'nom' => $this->faker->city(),
-            'code_postal' => $this->faker->postcode(),
+            'name' => $this->faker->city(),
+            'postal_code' => $this->faker->postcode(),
             'population' => $this->faker->numberBetween(1000, 100000),
             'department_id' => Department::factory(),
         ];

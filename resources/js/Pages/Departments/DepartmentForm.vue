@@ -12,14 +12,14 @@
                             Nom
                         </label>
                         <input 
-                            v-model="form.nom" 
+                            v-model="form.name" 
                             type="text" 
                             id="name"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                             required
                         />
-                        <div v-if="form.errors.nom" class="text-red-600 text-sm mt-1">
-                            {{ form.errors.nom }}
+                        <div v-if="form.errors.name" class="text-red-600 text-sm mt-1">
+                            {{ form.errors.name }}
                         </div>
                     </div>
 
@@ -72,13 +72,13 @@ const props = defineProps({
 const emit = defineEmits(['close', 'saved'])
 
 const form = useForm({
-    nom: '',
+    name: '',
     code: ''
 })
 
 watch(() => props.department, (newDepartment) => {
     if (newDepartment) {
-        form.nom = newDepartment.nom
+        form.name = newDepartment.name
         form.code = newDepartment.code
     } else {
         form.reset()

@@ -22,7 +22,7 @@ class UpdateCityRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nom' => [
+            'name' => [
                 'sometimes',
                 'required',
                 'string',
@@ -30,7 +30,7 @@ class UpdateCityRequest extends FormRequest
                 'min:2',
                 'max:100'
             ],
-            'code_postal' => [
+            'postal_code' => [
                 'sometimes',
                 'required',
                 'string',

@@ -22,14 +22,14 @@ class StoreCityRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nom' => [
+            'name' => [
                 'required',
                 'string',
                 'regex:/^[A-Za-zÀ-ÿ\s\-\']+$/',
                 'min:2',
                 'max:100'
             ],
-            'code_postal' => [
+            'postal_code' => [
                 'required',
                 'string',
                 'regex:/^[0-9]{5}$/'

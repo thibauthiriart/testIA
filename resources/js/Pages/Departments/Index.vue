@@ -30,7 +30,7 @@
                     <tbody class="bg-white divide-y divide-gray-200">
                         <tr v-for="department in departments.data" :key="department.id">
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ department.nom }}
+                                {{ department.name }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {{ department.code }}
@@ -124,7 +124,7 @@ const handleSaved = () => {
 const confirmDelete = (department) => {
     Swal.fire({
         title: 'Êtes-vous sûr?',
-        text: `Voulez-vous vraiment supprimer le département "${department.nom}"?`,
+        text: `Voulez-vous vraiment supprimer le département "${department.name}"?`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',

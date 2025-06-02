@@ -13,6 +13,18 @@
                         <!-- Navigation Links -->
                         <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
                             <Link
+                                href="/dashboard"
+                                :class="[
+                                    'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out',
+                                    page.url === '/dashboard' 
+                                        ? 'border-indigo-400 text-gray-900 focus:outline-none focus:border-indigo-700'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300'
+                                ]"
+                            >
+                                Tableau de bord
+                            </Link>
+
+                            <Link
                                 href="/departments"
                                 :class="[
                                     'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out',
@@ -35,6 +47,51 @@
                             >
                                 Villes
                             </Link>
+                        </div>
+                    </div>
+
+                    <!-- Right side menu -->
+                    <div class="hidden sm:flex sm:items-center sm:ml-6">
+                        <div class="ml-3 relative">
+                            <div v-if="$page.props.auth?.user" class="flex items-center">
+                                <span class="text-sm text-gray-700 mr-4">
+                                    {{ $page.props.auth.user.first_name }} {{ $page.props.auth.user.last_name }}
+                                </span>
+                                <div class="relative">
+                                    <button
+                                        @click="showUserMenu = !showUserMenu"
+                                        class="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none focus:text-gray-700"
+                                    >
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </button>
+                                    <div v-if="showUserMenu" @click.away="showUserMenu = false" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                                        <Link
+                                            href="/account"
+                                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        >
+                                            Mon compte
+                                        </Link>
+                                        <Link
+                                            href="/logout"
+                                            method="post"
+                                            as="button"
+                                            class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        >
+                                            Déconnexion
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
+                            <div v-else>
+                                <Link
+                                    href="/login"
+                                    class="text-sm text-gray-500 hover:text-gray-700 focus:outline-none focus:text-gray-700"
+                                >
+                                    Connexion
+                                </Link>
+                            </div>
                         </div>
                     </div>
 
@@ -116,5 +173,6 @@ import { ref } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
 
 const showingNavigationDropdown = ref(false)
+const showUserMenu = ref(false)
 const page = usePage()
 </script>

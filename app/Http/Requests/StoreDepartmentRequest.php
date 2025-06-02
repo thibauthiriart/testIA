@@ -29,7 +29,7 @@ class StoreDepartmentRequest extends FormRequest
                 'unique:departments,code',
                 'max:3'
             ],
-            'nom' => [
+            'name' => [
                 'required',
                 'string',
                 'regex:/^[A-Za-zÀ-ÿ\s\-\']+$/',

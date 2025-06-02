@@ -32,7 +32,7 @@ class UpdateDepartmentRequest extends FormRequest
                 'unique:departments,code,' . $departmentId,
                 'max:3'
             ],
-            'nom' => [
+            'name' => [
                 'sometimes',
                 'required',
                 'string',

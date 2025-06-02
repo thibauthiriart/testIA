@@ -9,7 +9,7 @@ class Department extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['code', 'nom'];
+    protected $fillable = ['code', 'name'];
 
     public function cities()
     {

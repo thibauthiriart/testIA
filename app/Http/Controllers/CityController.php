@@ -26,7 +26,7 @@ class CityController extends Controller
         $validated = $request->validated();
 
         // Sorting
-        $sortField = $validated['sort'] ?? 'nom';
+        $sortField = $validated['sort'] ?? 'name';
         $sortDirection = $validated['direction'] ?? 'asc';
 
         // Détermine si on a besoin de join
@@ -41,12 +41,12 @@ class CityController extends Controller
 
         // Search cities filter
         if (isset($validated['search'])) {
-            $query->where('cities.nom', 'like', '%' . $validated['search'] . '%');
+            $query->where('cities.name', 'like', '%' . $validated['search'] . '%');
         }
 
         // Department search/filter
         if (isset($validated['department_search'])) {
-            $query->where('departments.nom', 'like', '%' . $validated['department_search'] . '%');
+            $query->where('departments.name', 'like', '%' . $validated['department_search'] . '%');
         }
 
         if (isset($validated['department_id'])) {
@@ -66,7 +66,7 @@ class CityController extends Controller
 
         // Apply sorting
         if ($sortField === 'department') {
-            $query->orderBy('departments.nom', $sortDirection);
+            $query->orderBy('departments.name', $sortDirection);
         } else {
             $query->orderBy('cities.' . $sortField, $sortDirection);
         }

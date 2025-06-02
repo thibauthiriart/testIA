@@ -19,11 +19,11 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 <div class="flex flex-col">
                                     <button
-                                        @click="handleSort('nom')"
+                                        @click="handleSort('name')"
                                         class="flex items-center space-x-1 hover:text-gray-700 focus:outline-none"
                                     >
                                         <span>Nom</span>
-                                        <svg v-if="filters.sort === 'nom'" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <svg v-if="filters.sort === 'name'" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                             <path v-if="filters.direction === 'asc'" fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
                                             <path v-else fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                                         </svg>
@@ -126,13 +126,13 @@
                     <tbody class="bg-white divide-y divide-gray-200">
                         <tr v-for="city in cities.data" :key="city.id">
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ city.nom }}
+                                {{ city.name }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {{ city.population.toLocaleString('fr-FR') }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ city.department.nom }} ({{ city.department.code }})
+                                {{ city.department.name }} ({{ city.department.code }})
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <button 
@@ -418,7 +418,7 @@ const handlePopulationFilter = () => {
 const confirmDelete = (city) => {
     Swal.fire({
         title: 'Êtes-vous sûr?',
-        text: `Voulez-vous vraiment supprimer la ville "${city.nom}"?`,
+        text: `Voulez-vous vraiment supprimer la ville "${city.name}"?`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
