@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(php artisan test:*)",
+      "Bash(sed:*)",
+      "Bash(find:*)",
+      "Bash(php artisan route:list:*)",
+      "Bash(ls:*)",
+      "Bash(mv:*)"
     ],
     "deny": []
   }

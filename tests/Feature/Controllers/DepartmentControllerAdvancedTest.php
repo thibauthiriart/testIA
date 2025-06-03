@@ -1,15 +1,32 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Controllers;
 
 use Tests\TestCase;
 use App\Models\Department;
 use App\Models\City;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 
 class DepartmentControllerAdvancedTest extends TestCase
 {
     use RefreshDatabase;
+    
+    protected $admin;
+    
+    protected function setUp(): void
+    {
+        parent::setUp();
+        
+        // Créer les rôles
+        Role::create(['name' => 'admin']);
+        Role::create(['name' => 'user']);
+        
+        // Créer un utilisateur admin
+        $this->admin = User::factory()->create();
+        $this->admin->assignRole('admin');
+    }
 
     public function test_cannot_create_department_with_duplicate_code()
     {
@@ -17,8 +34,8 @@ class DepartmentControllerAdvancedTest extends TestCase
         Department::factory()->create(['code' => '75']);
 
         // Tenter de créer un autre département avec le même code
-        $response = $this->post('/departments', [
-            'nom' => 'Paris Duplicate',
+        $response = $this->actingAs($this->admin)->post('/departments', [
+            'name' => 'Paris Duplicate',
             'code' => '75'
         ]);
 
@@ -28,8 +45,8 @@ class DepartmentControllerAdvancedTest extends TestCase
 
     public function test_cannot_create_department_with_invalid_code_format()
     {
-        $response = $this->post('/departments', [
-            'nom' => 'Invalid Department',
+        $response = $this->actingAs($this->admin)->post('/departments', [
+            'name' => 'Invalid Department',
             'code' => 'ABC' // Code non numérique
         ]);
 
@@ -42,7 +59,7 @@ class DepartmentControllerAdvancedTest extends TestCase
         $department = Department::factory()->create();
         City::factory()->count(3)->create(['department_id' => $department->id]);
 
-        $response = $this->delete("/departments/{$department->id}");
+        $response = $this->actingAs($this->admin)->delete("/departments/{$department->id}");
 
         // La suppression devrait échouer ou supprimer en cascade selon la config
         // Dans notre cas, on a onDelete('cascade'), donc les villes sont supprimées
@@ -56,8 +73,8 @@ class DepartmentControllerAdvancedTest extends TestCase
         $department1 = Department::factory()->create(['code' => '01']);
         $department2 = Department::factory()->create(['code' => '02']);
 
-        $response = $this->put("/departments/{$department2->id}", [
-            'nom' => 'Updated Name',
+        $response = $this->actingAs($this->admin)->put("/departments/{$department2->id}", [
+            'name' => 'Updated Name',
             'code' => '01' // Code déjà utilisé
         ]);
 
@@ -70,27 +87,27 @@ class DepartmentControllerAdvancedTest extends TestCase
 
     public function test_department_name_must_be_at_least_2_characters()
     {
-        $response = $this->post('/departments', [
-            'nom' => 'A', // Trop court
+        $response = $this->actingAs($this->admin)->post('/departments', [
+            'name' => 'A', // Trop court
             'code' => '99'
         ]);
 
-        $response->assertSessionHasErrors(['nom']);
+        $response->assertSessionHasErrors(['name']);
     }
 
     public function test_department_name_cannot_exceed_100_characters()
     {
-        $response = $this->post('/departments', [
-            'nom' => str_repeat('a', 101), // Trop long
+        $response = $this->actingAs($this->admin)->post('/departments', [
+            'name' => str_repeat('a', 101), // Trop long
             'code' => '99'
         ]);
 
-        $response->assertSessionHasErrors(['nom']);
+        $response->assertSessionHasErrors(['name']);
     }
 
     public function test_cannot_access_non_existent_department()
     {
-        $response = $this->get('/departments/99999');
+        $response = $this->actingAs($this->admin)->get('/departments/99999');
         $response->assertStatus(404);
     }
 
@@ -99,7 +116,7 @@ class DepartmentControllerAdvancedTest extends TestCase
         // Créer 15 départements
         Department::factory()->count(15)->create();
 
-        $response = $this->get('/departments');
+        $response = $this->actingAs($this->admin)->get('/departments');
         
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => 
@@ -111,12 +128,12 @@ class DepartmentControllerAdvancedTest extends TestCase
 
     public function test_can_filter_departments_by_partial_name()
     {
-        Department::factory()->create(['nom' => 'Haute-Savoie']);
-        Department::factory()->create(['nom' => 'Savoie']);
-        Department::factory()->create(['nom' => 'Paris']);
+        Department::factory()->create(['name' => 'Haute-Savoie']);
+        Department::factory()->create(['name' => 'Savoie']);
+        Department::factory()->create(['name' => 'Paris']);
 
         // Test avec recherche partielle
-        $response = $this->get('/departments?search=Sav');
+        $response = $this->actingAs($this->admin)->get('/departments?search=Sav');
         
         $response->assertStatus(200);
         // Note: Ce test suppose que le contrôleur supporte la recherche
@@ -127,8 +144,8 @@ class DepartmentControllerAdvancedTest extends TestCase
     {
         Department::factory()->create(['code' => '75']);
 
-        $response = $this->post('/departments', [
-            'nom' => 'Another Paris',
+        $response = $this->actingAs($this->admin)->post('/departments', [
+            'name' => 'Another Paris',
             'code' => '75' // Même code
         ]);
 

@@ -1,11 +1,13 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Controllers;
 
 use Tests\TestCase;
 use App\Models\City;
 use App\Models\Department;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 
 class CityControllerTest extends TestCase
 {
@@ -15,9 +17,17 @@ class CityControllerTest extends TestCase
     {
         parent::setUp();
         
+        // Créer les rôles
+        Role::create(['name' => 'admin']);
+        Role::create(['name' => 'user']);
+        
+        // Créer un utilisateur admin
+        $this->admin = User::factory()->create();
+        $this->admin->assignRole('admin');
+        
         // Créer un département de référence pour les tests
         $this->department = Department::factory()->create([
-            'nom' => 'Ain',
+            'name' => 'Ain',
             'code' => '01'
         ]);
     }
@@ -26,15 +36,15 @@ class CityControllerTest extends TestCase
     {
         // Créer quelques villes de test
         City::factory()->create([
-            'nom' => 'Bourg-en-Bresse',
+            'name' => 'Bourg-en-Bresse',
             'department_id' => $this->department->id
         ]);
         City::factory()->create([
-            'nom' => 'Oyonnax',
+            'name' => 'Oyonnax',
             'department_id' => $this->department->id
         ]);
         
-        $response = $this->get('/cities');
+        $response = $this->actingAs($this->admin)->get('/cities');
         
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => 
@@ -47,97 +57,97 @@ class CityControllerTest extends TestCase
     public function test_index_filters_by_search()
     {
         City::factory()->create([
-            'nom' => 'Bourg-en-Bresse',
+            'name' => 'Bourg-en-Bresse',
             'department_id' => $this->department->id
         ]);
         City::factory()->create([
-            'nom' => 'Oyonnax',
+            'name' => 'Oyonnax',
             'department_id' => $this->department->id
         ]);
 
-        $response = $this->get('/cities?search=Bourg');
+        $response = $this->actingAs($this->admin)->get('/cities?search=Bourg');
 
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => 
             $page->has('cities.data', 1)
-                ->where('cities.data.0.nom', 'Bourg-en-Bresse')
+                ->where('cities.data.0.name', 'Bourg-en-Bresse')
         );
     }
 
     public function test_index_filters_by_department()
     {
-        $otherDepartment = Department::factory()->create(['nom' => 'Aisne', 'code' => '02']);
+        $otherDepartment = Department::factory()->create(['name' => 'Aisne', 'code' => '02']);
         
         City::factory()->create([
-            'nom' => 'Bourg-en-Bresse',
+            'name' => 'Bourg-en-Bresse',
             'department_id' => $this->department->id
         ]);
         City::factory()->create([
-            'nom' => 'Laon',
+            'name' => 'Laon',
             'department_id' => $otherDepartment->id
         ]);
 
-        $response = $this->get("/cities?department_id={$this->department->id}");
+        $response = $this->actingAs($this->admin)->get("/cities?department_id={$this->department->id}");
 
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => 
             $page->has('cities.data', 1)
-                ->where('cities.data.0.nom', 'Bourg-en-Bresse')
+                ->where('cities.data.0.name', 'Bourg-en-Bresse')
         );
     }
 
     public function test_index_filters_by_population()
     {
         City::factory()->create([
-            'nom' => 'Grande Ville',
+            'name' => 'Grande Ville',
             'population' => 100000,
             'department_id' => $this->department->id
         ]);
         City::factory()->create([
-            'nom' => 'Petite Ville',
+            'name' => 'Petite Ville',
             'population' => 5000,
             'department_id' => $this->department->id
         ]);
 
-        $response = $this->get('/cities?population_operator=gt&population_value=50000');
+        $response = $this->actingAs($this->admin)->get('/cities?population_operator=gt&population_value=50000');
 
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => 
             $page->has('cities.data', 1)
-                ->where('cities.data.0.nom', 'Grande Ville')
+                ->where('cities.data.0.name', 'Grande Ville')
         );
     }
 
     public function test_index_sorts_cities()
     {
         City::factory()->create([
-            'nom' => 'Zebra City',
+            'name' => 'Zebra City',
             'department_id' => $this->department->id
         ]);
         City::factory()->create([
-            'nom' => 'Alpha City',
+            'name' => 'Alpha City',
             'department_id' => $this->department->id
         ]);
 
-        $response = $this->get('/cities?sort=nom&direction=asc');
+        $response = $this->actingAs($this->admin)->get('/cities?sort=name&direction=asc');
 
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => 
-            $page->where('cities.data.0.nom', 'Alpha City')
-                ->where('cities.data.1.nom', 'Zebra City')
+            $page->where('cities.data.0.name', 'Alpha City')
+                ->where('cities.data.1.name', 'Zebra City')
         );
     }
 
     public function test_store_creates_new_city()
     {
         $cityData = [
-            'nom' => 'Test City',
-            'code_postal' => '01000',
+            'name' => 'Test City',
+            'postal_code' => '01000',
             'population' => 25000,
             'department_id' => $this->department->id
         ];
 
-        $response = $this->post('/cities', $cityData);
+        $response = $this->actingAs($this->admin)->post('/cities', $cityData);
 
         $response->assertRedirect('/cities');
         $this->assertDatabaseHas('cities', $cityData);
@@ -145,16 +155,16 @@ class CityControllerTest extends TestCase
 
     public function test_store_validates_required_fields()
     {
-        $response = $this->post('/cities', []);
+        $response = $this->actingAs($this->admin)->post('/cities', []);
 
-        $response->assertSessionHasErrors(['nom', 'code_postal', 'department_id']);
+        $response->assertSessionHasErrors(['name', 'postal_code', 'department_id']);
     }
 
     public function test_store_validates_department_exists()
     {
-        $response = $this->post('/cities', [
-            'nom' => 'Test City',
-            'code_postal' => '01000',
+        $response = $this->actingAs($this->admin)->post('/cities', [
+            'name' => 'Test City',
+            'postal_code' => '01000',
             'population' => 25000,
             'department_id' => 999
         ]);
@@ -168,15 +178,15 @@ class CityControllerTest extends TestCase
             'department_id' => $this->department->id
         ]);
 
-        $response = $this->get("/cities/{$city->id}");
+        $response = $this->actingAs($this->admin)->get("/cities/{$city->id}");
 
         $response->assertStatus(200);
         $response->assertJson([
             'id' => $city->id,
-            'nom' => $city->nom,
+            'name' => $city->name,
             'department' => [
                 'id' => $this->department->id,
-                'nom' => $this->department->nom
+                'name' => $this->department->name
             ]
         ]);
     }
@@ -187,13 +197,13 @@ class CityControllerTest extends TestCase
             'department_id' => $this->department->id
         ]);
         $updateData = [
-            'nom' => 'Updated City',
-            'code_postal' => '01999',
+            'name' => 'Updated City',
+            'postal_code' => '01999',
             'population' => 50000,
             'department_id' => $this->department->id
         ];
 
-        $response = $this->put("/cities/{$city->id}", $updateData);
+        $response = $this->actingAs($this->admin)->put("/cities/{$city->id}", $updateData);
 
         $response->assertRedirect('/cities');
         $this->assertDatabaseHas('cities', array_merge(['id' => $city->id], $updateData));
@@ -205,7 +215,7 @@ class CityControllerTest extends TestCase
             'department_id' => $this->department->id
         ]);
 
-        $response = $this->delete("/cities/{$city->id}");
+        $response = $this->actingAs($this->admin)->delete("/cities/{$city->id}");
 
         $response->assertRedirect('/cities');
         $this->assertDatabaseMissing('cities', ['id' => $city->id]);

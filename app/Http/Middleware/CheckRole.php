@@ -18,7 +18,7 @@ class CheckRole
                 ], 403);
             }
             
-            return Inertia::render('Errors/403')->toResponse($request);
+            return Inertia::render('Errors/403')->toResponse($request)->setStatusCode(403);
         }
 
         return $next($request);

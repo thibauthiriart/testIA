@@ -25,7 +25,7 @@ class IndexCityRequest extends FormRequest
             'search' => 'nullable|string|max:255',
             'department_search' => 'nullable|string|max:255',
             'department_id' => 'nullable|integer|exists:departments,id',
-            'sort' => 'nullable|string|in:nom,population,department',
+            'sort' => 'nullable|string|in:name,population,department',
             'direction' => 'nullable|string|in:asc,desc',
             'per_page' => 'nullable|integer|in:5,10,25,50,100',
             'page' => 'nullable|integer|min:1',
@@ -43,7 +43,7 @@ class IndexCityRequest extends FormRequest
     {
         return [
             'department_id.exists' => 'Le département sélectionné n\'existe pas.',
-            'sort.in' => 'Le champ de tri doit être nom, population ou department.',
+            'sort.in' => 'Le champ de tri doit être name, population ou department.',
             'direction.in' => 'La direction de tri doit être asc ou desc.',
             'per_page.in' => 'Le nombre d\'éléments par page doit être 5, 10, 25, 50 ou 100.',
             'page.min' => 'Le numéro de page doit être supérieur à 0.',

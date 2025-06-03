@@ -14,7 +14,7 @@ class CityFactory extends Factory
     {
         return [
             'name' => $this->faker->city(),
-            'postal_code' => $this->faker->postcode(),
+            'postal_code' => str_pad($this->faker->numberBetween(1000, 99999), 5, '0', STR_PAD_LEFT),
             'population' => $this->faker->numberBetween(1000, 100000),
             'department_id' => Department::factory(),
         ];
