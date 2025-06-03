@@ -6,6 +6,16 @@
 
         <title>Laravel + Inertia + Vue</title>
 
+        <!-- Script d'initialisation du thème (avant le CSS pour éviter le flash) -->
+        <script>
+            (function() {
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                }
+            })();
+        </script>
+
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @inertiaHead

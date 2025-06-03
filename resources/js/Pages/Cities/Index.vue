@@ -1,58 +1,46 @@
 <template>
     <AppLayout>
         <div class="container mx-auto px-4 py-8">
-        <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
             <div class="flex justify-between items-center mb-6">
-                <h1 class="text-2xl font-bold text-gray-800">Gestion des Villes</h1>
+                <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Gestion des Villes</h1>
                 <button 
                     @click="openModal()"
-                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                    class="bg-blue-500 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                 >
                     Ajouter une ville
                 </button>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="min-w-full table-auto">
-                    <thead class="bg-gray-100">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <DataTable>
+                <template #headers>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                 <div class="flex flex-col">
-                                    <button
-                                        @click="handleSort('name')"
-                                        class="flex items-center space-x-1 hover:text-gray-700 focus:outline-none"
-                                    >
-                                        <span>Nom</span>
-                                        <svg v-if="filters.sort === 'name'" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path v-if="filters.direction === 'asc'" fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
-                                            <path v-else fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                        </svg>
-                                    </button>
-                                    <input
+                                    <SortableHeader
+                                        label="Nom"
+                                        :is-active="filters.sort === 'name'"
+                                        :direction="filters.direction"
+                                        @sort="handleSort('name')"
+                                    />
+                                    <SearchInput
                                         v-model="search"
-                                        type="text"
-                                        placeholder="Rechercher..."
-                                        class="mt-2 px-2 py-1 text-sm font-normal normal-case border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        class="mt-2"
                                         @input="handleSearch"
                                     />
                                 </div>
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                 <div class="flex flex-col">
-                                    <button
-                                        @click="handleSort('population')"
-                                        class="flex items-center space-x-1 hover:text-gray-700 focus:outline-none"
-                                    >
-                                        <span>Population</span>
-                                        <svg v-if="filters.sort === 'population'" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path v-if="filters.direction === 'asc'" fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
-                                            <path v-else fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                        </svg>
-                                    </button>
+                                    <SortableHeader
+                                        label="Population"
+                                        :is-active="filters.sort === 'population'"
+                                        :direction="filters.direction"
+                                        @sort="handleSort('population')"
+                                    />
                                     <div class="flex items-center mt-2 space-x-1">
                                         <select
                                             v-model="populationOperator"
-                                            class="px-1 py-1 text-sm font-normal normal-case border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            class="px-1 py-1 text-sm font-normal normal-case border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400"
                                             @change="handlePopulationFilter"
                                         >
                                             <option value="">--</option>
@@ -64,55 +52,48 @@
                                             v-model.number="populationValue"
                                             type="number"
                                             placeholder="0"
-                                            class="w-20 px-2 py-1 text-sm font-normal normal-case border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            class="w-20 px-2 py-1 text-sm font-normal normal-case border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400"
                                             @input="handlePopulationFilter"
                                             min="0"
                                         />
                                     </div>
                                 </div>
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                 <div class="flex flex-col">
-                                    <button
-                                        @click="handleSort('department')"
-                                        class="flex items-center space-x-1 hover:text-gray-700 focus:outline-none"
-                                    >
-                                        <span>Département</span>
-                                        <svg v-if="filters.sort === 'department'" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path v-if="filters.direction === 'asc'" fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
-                                            <path v-else fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                        </svg>
-                                    </button>
+                                    <SortableHeader
+                                        label="Département"
+                                        :is-active="filters.sort === 'department'"
+                                        :direction="filters.direction"
+                                        @sort="handleSort('department')"
+                                    />
                                     <div class="relative mt-2">
-                                        <input
+                                        <SearchInput
                                             v-model="departmentSearch"
-                                            type="text"
-                                            placeholder="Rechercher..."
-                                            class="px-2 py-1 text-sm font-normal normal-case border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                                             @input="handleDepartmentSearch"
                                             @focus="showSuggestions = true"
                                             @blur="hideSuggestions"
                                         />
-                                        <div v-if="showSuggestions && filteredDepartments.length > 0" class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-auto">
+                                        <div v-if="showSuggestions && filteredDepartments.length > 0" class="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-48 overflow-auto">
                                             <button
                                                 v-for="dept in filteredDepartments"
                                                 :key="dept.id"
                                                 @mousedown.prevent="selectDepartment(dept)"
-                                                class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                                                class="w-full text-left px-3 py-2 text-sm text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600 focus:bg-gray-100 dark:focus:bg-gray-600 focus:outline-none"
                                             >
-                                                {{ dept.nom }} ({{ dept.code }})
+                                                {{ dept.name }} ({{ dept.code }})
                                             </button>
                                         </div>
                                     </div>
                                 </div>
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                 Actions
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                 <button
                                     @click="resetSort"
-                                    class="flex items-center space-x-1 text-red-600 hover:text-red-800 focus:outline-none"
+                                    class="flex items-center space-x-1 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 focus:outline-none"
                                     title="Réinitialiser le tri"
                                 >
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -121,82 +102,50 @@
                                     <span class="text-xs">Réinitialiser</span>
                                 </button>
                             </th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                </template>
+                <template #body>
                         <tr v-for="city in cities.data" :key="city.id">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                 {{ city.name }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                 {{ city.population.toLocaleString('fr-FR') }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                 {{ city.department.name }} ({{ city.department.code }})
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <button 
                                     @click="openModal(city)"
-                                    class="text-blue-600 hover:text-blue-900 mr-3"
+                                    class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-3"
                                 >
                                     Modifier
                                 </button>
                                 <button 
                                     @click="confirmDelete(city)"
-                                    class="text-red-600 hover:text-red-900"
+                                    class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
                                 >
                                     Supprimer
                                 </button>
                             </td>
                             <td class="px-6 py-4"></td>
                         </tr>
-                    </tbody>
-                </table>
-            </div>
+                </template>
+            </DataTable>
 
             <!-- Pagination et Items par page -->
             <div class="mt-6 flex justify-between items-center">
                 <!-- Sélecteur d'items par page -->
-                <div class="flex items-center space-x-2">
-                    <label for="per-page" class="text-sm text-gray-700">Afficher</label>
-                    <select
-                        id="per-page"
-                        v-model="perPage"
-                        @change="handlePerPageChange"
-                        class="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    >
-                        <option value="5">5</option>
-                        <option value="10">10</option>
-                        <option value="25">25</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                    </select>
-                    <span class="text-sm text-gray-700">éléments</span>
-                </div>
+                <ItemsPerPage
+                    v-model="perPage"
+                    @update:modelValue="handlePerPageChange"
+                />
                 
                 <!-- Pagination -->
-                <nav class="flex items-center space-x-2" v-if="cities.links && cities.links.length > 3">
-                    <template v-for="link in cities.links" :key="link.label">
-                        <Link
-                            v-if="link.url"
-                            :href="link.url"
-                            :class="[
-                                'px-3 py-2 text-sm rounded-md',
-                                link.active ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                            ]"
-                            v-html="link.label"
-                            :only="['cities']"
-                        />
-                        <span
-                            v-else
-                            :class="[
-                                'px-3 py-2 text-sm rounded-md',
-                                'bg-gray-200 text-gray-400 cursor-not-allowed opacity-50'
-                            ]"
-                            v-html="link.label"
-                        />
-                    </template>
-                </nav>
+                <Pagination
+                    :links="cities.links"
+                    :only="['cities']"
+                />
                 
                 <!-- Espace vide pour équilibrer la mise en page -->
                 <div v-if="!(cities.links && cities.links.length > 3)" class="w-32"></div>
@@ -220,6 +169,12 @@ import { ref, computed } from 'vue'
 import { router, Link } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import CityForm from './CityForm.vue'
+import DataTable from '@/components/DataTable.vue'
+import SortableHeader from '@/components/SortableHeader.vue'
+import SearchInput from '@/components/SearchInput.vue'
+import Pagination from '@/components/Pagination.vue'
+import ItemsPerPage from '@/components/ItemsPerPage.vue'
+import { useTableFilters } from '@/composables/useTableFilters'
 import Swal from 'sweetalert2'
 
 const props = defineProps({
@@ -242,7 +197,7 @@ const populationValue = ref(props.filters?.population_value || '')
 const filteredDepartments = computed(() => {
     if (departmentSearch.value.length < 2) return []
     return props.departments.filter(dept => 
-        dept.nom.toLowerCase().includes(departmentSearch.value.toLowerCase())
+        dept.name.toLowerCase().includes(departmentSearch.value.toLowerCase())
     )
 })
 
@@ -261,52 +216,52 @@ const handleSaved = () => {
     router.reload({ only: ['cities'] })
 }
 
-const handleSearch = () => {
-    router.get('/cities', { 
-        search: search.value,
-        department_search: departmentSearch.value,
-        department_id: selectedDepartmentId.value,
-        population_operator: populationOperator.value,
-        population_value: populationValue.value,
-        sort: props.filters?.sort || 'nom',
-        direction: props.filters?.direction || 'asc',
-        per_page: perPage.value
-    }, {
+const getCurrentFilters = () => ({
+    search: search.value,
+    department_search: departmentSearch.value,
+    department_id: selectedDepartmentId.value,
+    population_operator: populationOperator.value,
+    population_value: populationValue.value,
+    sort: props.filters?.sort || 'nom',
+    direction: props.filters?.direction || 'asc',
+    per_page: perPage.value
+})
+
+const applyFilters = (overrides = {}, options = {}) => {
+    const defaultOptions = {
         preserveState: true,
         preserveScroll: true,
-        only: ['cities']
+        only: ['cities', 'filters']
+    }
+    
+    router.get('/cities', {
+        ...getCurrentFilters(),
+        ...overrides
+    }, {
+        ...defaultOptions,
+        ...options
     })
+}
+
+const handleSearch = () => {
+    applyFilters()
 }
 
 const handleSort = (field) => {
     let direction = 'asc'
     
-    // Si on clique sur la même colonne, on inverse la direction
     if (props.filters?.sort === field) {
         direction = props.filters.direction === 'asc' ? 'desc' : 'asc'
     }
     
-    router.get('/cities', {
-        search: search.value,
-        department_search: departmentSearch.value,
-        department_id: selectedDepartmentId.value,
-        population_operator: populationOperator.value,
-        population_value: populationValue.value,
-        sort: field,
-        direction: direction,
-        per_page: perPage.value
-    }, {
-        preserveState: true,
-        preserveScroll: true,
-        only: ['cities', 'filters']
-    })
+    applyFilters({ sort: field, direction })
 }
 
 const handleDepartmentSearch = () => {
     // Si on avait un département sélectionné et que le texte a changé, on le désélectionne
     if (selectedDepartmentId.value) {
         const selectedDept = props.departments.find(d => d.id === selectedDepartmentId.value)
-        if (selectedDept && departmentSearch.value !== selectedDept.nom) {
+        if (selectedDept && departmentSearch.value !== selectedDept.name) {
             selectedDepartmentId.value = ''
             // Réactive l'autocomplétion si on a au moins 2 caractères
             if (departmentSearch.value.length >= 2) {
@@ -317,41 +272,18 @@ const handleDepartmentSearch = () => {
     
     // Recherche LIKE si pas de département spécifique sélectionné
     if (!selectedDepartmentId.value) {
-        router.get('/cities', {
-            search: search.value,
-            department_search: departmentSearch.value,
-            population_operator: populationOperator.value,
-            population_value: populationValue.value,
-            sort: props.filters?.sort || 'nom',
-            direction: props.filters?.direction || 'asc',
-            per_page: perPage.value
-        }, {
-            preserveState: true,
-            preserveScroll: true,
-            only: ['cities', 'filters']
-        })
+        applyFilters()
     }
 }
 
 const selectDepartment = (dept) => {
-    departmentSearch.value = dept.nom
+    departmentSearch.value = dept.name
     selectedDepartmentId.value = dept.id
     showSuggestions.value = false
     
-    // Recherche par ID de département spécifique
-    router.get('/cities', {
-        search: search.value,
+    applyFilters({
         department_id: dept.id,
-        department_search: dept.nom,
-        population_operator: populationOperator.value,
-        population_value: populationValue.value,
-        sort: props.filters?.sort || 'nom',
-        direction: props.filters?.direction || 'asc',
-        per_page: perPage.value
-    }, {
-        preserveState: true,
-        preserveScroll: true,
-        only: ['cities', 'filters']
+        department_search: dept.name
     })
 }
 
@@ -363,14 +295,13 @@ const hideSuggestions = () => {
 }
 
 const resetSort = () => {
-    // Vider tous les champs de recherche
     search.value = ''
     departmentSearch.value = ''
     selectedDepartmentId.value = ''
     populationOperator.value = ''
     populationValue.value = ''
+    perPage.value = 10
     
-    // Faire la requête sans aucun filtre
     router.get('/cities', {}, {
         preserveState: true,
         preserveScroll: true,
@@ -379,39 +310,12 @@ const resetSort = () => {
 }
 
 const handlePerPageChange = () => {
-    router.get('/cities', {
-        search: search.value,
-        department_search: departmentSearch.value,
-        department_id: selectedDepartmentId.value,
-        population_operator: populationOperator.value,
-        population_value: populationValue.value,
-        sort: props.filters?.sort || 'nom',
-        direction: props.filters?.direction || 'asc',
-        per_page: perPage.value
-    }, {
-        preserveState: true,
-        preserveScroll: true,
-        only: ['cities', 'filters']
-    })
+    applyFilters()
 }
 
 const handlePopulationFilter = () => {
-    // Ne faire la requête que si les deux valeurs sont présentes ou si les deux sont vides
     if ((populationOperator.value && populationValue.value) || (!populationOperator.value && !populationValue.value)) {
-        router.get('/cities', {
-            search: search.value,
-            department_search: departmentSearch.value,
-            department_id: selectedDepartmentId.value,
-            population_operator: populationOperator.value,
-            population_value: populationValue.value,
-            sort: props.filters?.sort || 'nom',
-            direction: props.filters?.direction || 'asc',
-            per_page: perPage.value
-        }, {
-            preserveState: true,
-            preserveScroll: true,
-            only: ['cities', 'filters']
-        })
+        applyFilters()
     }
 }
 

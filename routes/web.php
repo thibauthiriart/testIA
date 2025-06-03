@@ -4,8 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\Auth\AuthController;
-use App\Models\City;
-use App\Models\Department;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\MapController;
 
 // Routes publiques
 Route::get('/', function () {
@@ -19,18 +19,19 @@ Route::post('/register', [AuthController::class, 'register']);
 
 // Routes protégées
 Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', function () {
-        $stats = [
-            'departments_count' => Department::count(),
-            'cities_count' => City::count(),
-            'total_population' => City::sum('population'),
-        ];
-        
-        return inertia('Dashboard', ['stats' => $stats]);
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/map', [MapController::class, 'index'])->name('map.index');
     
-    Route::resource('departments', DepartmentController::class);
-    Route::resource('cities', CityController::class);
+    // Routes accessibles aux admins uniquement
+    Route::middleware(['role:admin'])->group(function () {
+        Route::resource('departments', DepartmentController::class);
+        Route::resource('cities', CityController::class);
+        
+        // Gestion des utilisateurs
+        Route::get('/users', [\App\Http\Controllers\UserController::class, 'index'])->name('users.index');
+        Route::put('/users/{user}/role', [\App\Http\Controllers\UserController::class, 'updateRole'])->name('users.update-role');
+        Route::delete('/users/{user}', [\App\Http\Controllers\UserController::class, 'destroy'])->name('users.destroy');
+    });
     
     Route::get('/account', [AuthController::class, 'showAccount'])->name('account');
     Route::put('/account', [AuthController::class, 'updateAccount']);
