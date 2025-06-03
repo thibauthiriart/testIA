@@ -32,22 +32,21 @@
             <div v-if="loading" class="flex items-center justify-center h-96">
               <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
             </div>
+
+            <!-- Population Filter -->
+            <PopulationFilter
+              class="mt-6"
+              :filtered-count="filteredCities.length"
+              @filter-changed="handleFilterChange"
+            />
             
             <!-- Stats -->
-            <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div class="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg transition-colors duration-300">
-                <div class="text-lg font-semibold text-blue-900 dark:text-blue-100">{{ cities.length }}</div>
-                <div class="text-sm text-blue-700 dark:text-blue-300">Villes affichées</div>
-              </div>
-              <div class="bg-green-50 dark:bg-green-900 p-4 rounded-lg transition-colors duration-300">
-                <div class="text-lg font-semibold text-green-900 dark:text-green-100">{{ totalPopulation.toLocaleString() }}</div>
-                <div class="text-sm text-green-700 dark:text-green-300">Population totale</div>
-              </div>
-              <div class="bg-purple-50 dark:bg-purple-900 p-4 rounded-lg transition-colors duration-300">
-                <div class="text-lg font-semibold text-purple-900 dark:text-purple-100">{{ uniqueDepartments }}</div>
-                <div class="text-sm text-purple-700 dark:text-purple-300">Départements</div>
-              </div>
-            </div>
+            <MapStats
+              class="mt-6"
+              :cities-count="filteredCities.length"
+              :total-population="totalPopulation"
+              :departments-count="uniqueDepartments"
+            />
           </div>
         </div>
       </div>
@@ -60,6 +59,8 @@ import { ref, onMounted, computed, createApp } from 'vue'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import MapPopup from '@/components/Map/Popup.vue'
 import MapMarker from '@/components/Map/Marker.vue'
+import PopulationFilter from '@/components/PopulationFilter.vue'
+import MapStats from '@/components/MapStats.vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -75,14 +76,26 @@ const mapContainer = ref(null)
 const loading = ref(true)
 const cities = ref([])
 const map = ref(null)
+const markers = ref([])
+
+// Population filter state
+const currentPopulationFilter = ref({ min: 0, max: Infinity })
+
+// Computed properties for filtered cities
+const filteredCities = computed(() => {
+  const { min, max } = currentPopulationFilter.value
+  return cities.value.filter(city => 
+    city.population >= min && city.population <= max
+  )
+})
 
 // Computed properties for stats
 const totalPopulation = computed(() => {
-  return cities.value.reduce((total, city) => total + city.population, 0)
+  return filteredCities.value.reduce((total, city) => total + city.population, 0)
 })
 
 const uniqueDepartments = computed(() => {
-  const departments = new Set(cities.value.map(city => city.department.code))
+  const departments = new Set(filteredCities.value.map(city => city.department.code))
   return departments.size
 })
 
@@ -127,8 +140,20 @@ const initializeMap = () => {
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(map.value)
   
-  // Add markers for each city
-  cities.value.forEach(city => {
+  // Initialize with all cities
+  updateMarkers()
+}
+
+// Update markers based on filtered cities
+const updateMarkers = () => {
+  // Clear existing markers
+  markers.value.forEach(marker => {
+    map.value.removeLayer(marker)
+  })
+  markers.value = []
+  
+  // Add markers for filtered cities
+  filteredCities.value.forEach(city => {
     // Create marker container
     const markerContainer = document.createElement('div')
     const markerApp = createApp(MapMarker, { population: city.population })
@@ -161,7 +186,15 @@ const initializeMap = () => {
     marker.on('mouseout', function() {
       this.closePopup()
     })
+    
+    markers.value.push(marker)
   })
+}
+
+// Handle filter change from PopulationFilter component
+const handleFilterChange = (filter) => {
+  currentPopulationFilter.value = filter
+  updateMarkers()
 }
 
 // Get icon size based on population (for positioning only)

@@ -55,29 +55,11 @@
             </div>
 
             <!-- Pagination -->
-            <div class="mt-6 flex justify-center" v-if="departments.links && departments.links.length > 3">
-                <nav class="flex items-center space-x-2">
-                    <template v-for="link in departments.links" :key="link.label">
-                        <Link
-                            v-if="link.url"
-                            :href="link.url"
-                            :class="[
-                                'px-3 py-2 text-sm rounded-md',
-                                link.active ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                            ]"
-                            v-html="link.label"
-                            :only="['departments']"
-                        />
-                        <span
-                            v-else
-                            :class="[
-                                'px-3 py-2 text-sm rounded-md',
-                                'bg-gray-200 text-gray-400 cursor-not-allowed opacity-50'
-                            ]"
-                            v-html="link.label"
-                        />
-                    </template>
-                </nav>
+            <div class="mt-6 flex justify-center">
+                <Pagination
+                    :links="departments.links"
+                    :only="['departments']"
+                />
             </div>
         </div>
 
@@ -94,9 +76,10 @@
 
 <script setup>
 import { ref } from 'vue'
-import { router, Link } from '@inertiajs/vue3'
+import { router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import DepartmentForm from './DepartmentForm.vue'
+import Pagination from '@/components/Pagination.vue'
 import Swal from 'sweetalert2'
 
 const props = defineProps({
