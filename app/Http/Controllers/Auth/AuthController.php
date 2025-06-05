@@ -26,7 +26,10 @@ class AuthController extends Controller
             $user = Auth::user();
             $token = $user->createToken('Personal Access Token')->accessToken;
             
-            return redirect()->route('dashboard')->with('token', $token);
+            return redirect()->route('dashboard')->with([
+                'token' => $token,
+                'success' => 'Connexion réussie'
+            ]);
         }
 
         return back()->withErrors([
@@ -53,7 +56,10 @@ class AuthController extends Controller
         Auth::login($user);
         $token = $user->createToken('Personal Access Token')->accessToken;
 
-        return redirect()->route('dashboard')->with('token', $token);
+        return redirect()->route('dashboard')->with([
+            'token' => $token,
+            'success' => 'Compte créé avec succès'
+        ]);
     }
 
     public function logout(Request $request)

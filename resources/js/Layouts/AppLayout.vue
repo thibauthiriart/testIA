@@ -16,7 +16,7 @@
                                 href="/dashboard"
                                 :class="[
                                     'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out',
-                                    page.url === '/dashboard' 
+                                    page.url === '/dashboard'
                                         ? 'border-indigo-400 text-gray-900 dark:text-white focus:outline-none focus:border-indigo-700'
                                         : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 focus:outline-none focus:text-gray-700 dark:focus:text-white focus:border-gray-300'
                                 ]"
@@ -28,7 +28,7 @@
                                 href="/departments"
                                 :class="[
                                     'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out',
-                                    page.url.startsWith('/departments') 
+                                    page.url.startsWith('/departments')
                                         ? 'border-indigo-400 text-gray-900 dark:text-white focus:outline-none focus:border-indigo-700'
                                         : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 focus:outline-none focus:text-gray-700 dark:focus:text-white focus:border-gray-300'
                                 ]"
@@ -40,7 +40,7 @@
                                 href="/cities"
                                 :class="[
                                     'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out',
-                                    page.url.startsWith('/cities') 
+                                    page.url.startsWith('/cities')
                                         ? 'border-indigo-400 text-gray-900 dark:text-white focus:outline-none focus:border-indigo-700'
                                         : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 focus:outline-none focus:text-gray-700 dark:focus:text-white focus:border-gray-300'
                                 ]"
@@ -52,7 +52,7 @@
                                 href="/map"
                                 :class="[
                                     'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out',
-                                    page.url.startsWith('/map') 
+                                    page.url.startsWith('/map')
                                         ? 'border-indigo-400 text-gray-900 dark:text-white focus:outline-none focus:border-indigo-700'
                                         : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 focus:outline-none focus:text-gray-700 dark:focus:text-white focus:border-gray-300'
                                 ]"
@@ -61,16 +61,40 @@
                             </Link>
 
                             <Link
+                                href="/properties"
+                                :class="[
+                                    'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out',
+                                    page.url.startsWith('/properties')
+                                        ? 'border-indigo-400 text-gray-900 dark:text-white focus:outline-none focus:border-indigo-700'
+                                        : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 focus:outline-none focus:text-gray-700 dark:focus:text-white focus:border-gray-300'
+                                ]"
+                            >
+                                Propriétés
+                            </Link>
+
+                            <Link
                                 v-if="$page.props.auth?.user?.roles?.some(role => role.name === 'admin')"
                                 href="/users"
                                 :class="[
                                     'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out',
-                                    page.url.startsWith('/users') 
+                                    page.url.startsWith('/users')
                                         ? 'border-indigo-400 text-gray-900 dark:text-white focus:outline-none focus:border-indigo-700'
                                         : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 focus:outline-none focus:text-gray-700 dark:focus:text-white focus:border-gray-300'
                                 ]"
                             >
                                 Utilisateurs
+                            </Link>
+
+                            <Link
+                                href="/scrapers/agences-en-limousin"
+                                :class="[
+                                    'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out',
+                                    page.url.startsWith('/properties/scraper')
+                                        ? 'border-indigo-400 text-gray-900 dark:text-white focus:outline-none focus:border-indigo-700'
+                                        : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 focus:outline-none focus:text-gray-700 dark:focus:text-white focus:border-gray-300'
+                                ]"
+                            >
+                                Scraper
                             </Link>
                         </div>
                     </div>
@@ -234,14 +258,24 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import { useTheme } from '@/composables/useTheme'
+import { useAuthStore } from '../stores/auth.js'
 
 const showingNavigationDropdown = ref(false)
 const showUserMenu = ref(false)
 const page = usePage()
+const authStore = useAuthStore()
 
 // Theme management
 const { isDark, toggleTheme } = useTheme()
+
+// Check for token in flash data on mount (for redirects after login/register)
+onMounted(() => {
+    const token = page.props.flash?.token
+    if (token) {
+        authStore.setToken(token)
+    }
+})
 </script>

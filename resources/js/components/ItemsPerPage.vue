@@ -16,8 +16,6 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-
 const props = defineProps({
     modelValue: [String, Number],
     label: {
@@ -36,5 +34,5 @@ const props = defineProps({
 
 defineEmits(['update:modelValue'])
 
-const id = computed(() => `per-page-${Math.random().toString(36).substr(2, 9)}`)
+const id = `per-page-${Math.random().toString(36).substr(2, 9)}`
 </script>

@@ -18,4 +18,13 @@ class DashboardController extends Controller
         
         return Inertia::render('Dashboard', ['stats' => $stats]);
     }
+
+    public function getStats()
+    {
+        return response()->json([
+            'departments_count' => Department::count(),
+            'cities_count' => City::count(),
+            'total_population' => City::sum('population'),
+        ]);
+    }
 }

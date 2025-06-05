@@ -1,10 +1,5 @@
 <template>
   <AppLayout title="Carte des Villes">
-    <template #header>
-      <h2 class="font-semibold text-xl text-gray-800 dark:text-white leading-tight">
-        Carte de France - Villes
-      </h2>
-    </template>
 
     <div class="py-12">
       <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -18,28 +13,29 @@
                 Survolez les marqueurs pour voir les informations des villes
               </p>
             </div>
-            
+
             <!-- Map Container -->
-            <div 
-              ref="mapContainer" 
-              id="map" 
+            <div
+              ref="mapContainer"
+              id="map"
               class="w-full h-96 rounded-lg border border-gray-300 dark:border-gray-600"
               style="height: 600px;"
             >
             </div>
-            
+
             <!-- Loading state -->
             <div v-if="loading" class="flex items-center justify-center h-96">
               <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
             </div>
 
-            <!-- Population Filter -->
-            <PopulationFilter
+            <!-- City Search -->
+            <CitySearch
               class="mt-6"
-              :filtered-count="filteredCities.length"
-              @filter-changed="handleFilterChange"
+              :cities="cities"
+              @city-selected="handleCitySelected"
+              @properties-found="handlePropertiesFound"
             />
-            
+
             <!-- Stats -->
             <MapStats
               class="mt-6"
@@ -55,12 +51,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, createApp } from 'vue'
+import { ref, onMounted, computed, createApp, watch } from 'vue'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import MapPopup from '@/components/Map/Popup.vue'
 import MapMarker from '@/components/Map/Marker.vue'
-import PopulationFilter from '@/components/PopulationFilter.vue'
+import PropertyPopup from '@/components/Map/PropertyPopup.vue'
+import CitySearch from '@/components/CitySearch.vue'
 import MapStats from '@/components/MapStats.vue'
+import { useAuthStore } from '../../stores/auth.js'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -72,21 +70,21 @@ L.Icon.Default.mergeOptions({
   shadowUrl: new URL('leaflet/dist/images/marker-shadow.png', import.meta.url).href,
 })
 
+const authStore = useAuthStore()
 const mapContainer = ref(null)
 const loading = ref(true)
 const cities = ref([])
 const map = ref(null)
 const markers = ref([])
+const propertyMarkers = ref([])
 
-// Population filter state
-const currentPopulationFilter = ref({ min: 0, max: Infinity })
+// Search state
+const selectedCity = ref(null)
+const searchProperties = ref([])
 
-// Computed properties for filtered cities
+// Computed properties for filtered cities (now just all cities by default)
 const filteredCities = computed(() => {
-  const { min, max } = currentPopulationFilter.value
-  return cities.value.filter(city => 
-    city.population >= min && city.population <= max
-  )
+  return cities.value
 })
 
 // Computed properties for stats
@@ -105,21 +103,20 @@ const fetchCities = async () => {
     const response = await fetch('/api/map/cities', {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
+        ...authStore.getAuthHeaders(),
         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-        'Accept': 'application/json',
       },
       credentials: 'same-origin'
     })
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
-    
+
     const data = await response.json()
     cities.value = data
     loading.value = false
-    
+
     // Initialize map after data is loaded
     if (data.length > 0) {
       initializeMap()
@@ -134,12 +131,12 @@ const fetchCities = async () => {
 const initializeMap = () => {
   // Initialize map centered on France
   map.value = L.map('map').setView([46.603354, 1.888334], 6)
-  
+
   // Add OpenStreetMap tiles (always the same)
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(map.value)
-  
+
   // Initialize with all cities
   updateMarkers()
 }
@@ -151,17 +148,17 @@ const updateMarkers = () => {
     map.value.removeLayer(marker)
   })
   markers.value = []
-  
+
   // Add markers for filtered cities
   filteredCities.value.forEach(city => {
     // Create marker container
     const markerContainer = document.createElement('div')
     const markerApp = createApp(MapMarker, { population: city.population })
     markerApp.mount(markerContainer)
-    
+
     // Get icon size for positioning
     const iconSize = getIconSize(city.population)
-    
+
     const marker = L.marker([city.latitude, city.longitude], {
       icon: L.divIcon({
         className: 'custom-div-icon',
@@ -170,31 +167,75 @@ const updateMarkers = () => {
         iconAnchor: [iconSize / 2, iconSize / 2]
       })
     }).addTo(map.value)
-    
+
     // Create popup content using Vue component
     const popupContainer = document.createElement('div')
     const popupApp = createApp(MapPopup, { city })
     popupApp.mount(popupContainer)
-    
+
     marker.bindPopup(popupContainer)
-    
+
     // Add hover events for better UX
     marker.on('mouseover', function() {
       this.openPopup()
     })
-    
+
     marker.on('mouseout', function() {
       this.closePopup()
     })
-    
+
     markers.value.push(marker)
   })
 }
 
-// Handle filter change from PopulationFilter component
-const handleFilterChange = (filter) => {
-  currentPopulationFilter.value = filter
-  updateMarkers()
+// Handle city selection from CitySearch component
+const handleCitySelected = (city) => {
+  selectedCity.value = city
+  if (city && map.value) {
+    // Center map on selected city
+    map.value.setView([city.latitude, city.longitude], 12)
+  }
+}
+
+// Handle properties found from CitySearch component
+const handlePropertiesFound = (properties) => {
+  searchProperties.value = properties
+  updatePropertyMarkers()
+}
+
+// Update property markers on the map
+const updatePropertyMarkers = () => {
+  // Clear existing property markers
+  propertyMarkers.value.forEach(marker => {
+    map.value.removeLayer(marker)
+  })
+  propertyMarkers.value = []
+
+  // Add markers for properties
+  searchProperties.value.forEach(property => {
+    if (property.latitude && property.longitude) {
+      const marker = L.marker([property.latitude, property.longitude], {
+        icon: L.divIcon({
+          className: 'property-marker',
+          html: `<div class="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-lg">€</div>`,
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        })
+      }).addTo(map.value)
+
+      // Create popup container for property
+      const popupContainer = document.createElement('div')
+      const propertyPopupApp = createApp(PropertyPopup, { property })
+      propertyPopupApp.mount(popupContainer)
+
+      marker.bindPopup(popupContainer, {
+        maxWidth: 300,
+        minWidth: 200
+      })
+
+      propertyMarkers.value.push(marker)
+    }
+  })
 }
 
 // Get icon size based on population (for positioning only)
@@ -208,7 +249,25 @@ const getIconSize = (population) => {
 
 
 onMounted(() => {
-  fetchCities()
+  // Si le token est déjà présent, on peut charger immédiatement
+  if (authStore.isReady || authStore.token) {
+    fetchCities()
+  } else {
+    // Sinon on attend que le store soit prêt
+    const unwatch = watch(() => authStore.isReady, (isReady) => {
+      if (isReady) {
+        fetchCities()
+        unwatch()
+      }
+    })
+
+    // Fallback: marquer comme prêt après 500ms même sans token (pour les cas où on est déjà connecté)
+    setTimeout(() => {
+      if (!authStore.isReady) {
+        authStore.markAsReady()
+      }
+    }, 500)
+  }
 })
 </script>
 
@@ -241,19 +300,5 @@ onMounted(() => {
 :global(.custom-div-icon) {
   background: transparent !important;
   border: none !important;
-}
-
-/* Loading animation */
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
 }
 </style>

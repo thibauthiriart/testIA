@@ -189,8 +189,29 @@ const updateAccount = () => {
 }
 
 const updatePassword = () => {
-    // Fonctionnalité à implémenter
-    alert('Fonctionnalité de changement de mot de passe à implémenter')
+    if (!passwordForm.current_password || !passwordForm.password || !passwordForm.password_confirmation) {
+        alert('Veuillez remplir tous les champs')
+        return
+    }
+
+    if (passwordForm.password !== passwordForm.password_confirmation) {
+        alert('Les mots de passe ne correspondent pas')
+        return
+    }
+
+    // Ici vous pouvez implémenter l'appel API pour changer le mot de passe
+    // router.put('/user/password', passwordForm, {
+    //     onSuccess: () => {
+    //         showPasswordModal.value = false
+    //         alert('Mot de passe mis à jour avec succès')
+    //     },
+    //     onError: (errors) => {
+    //         console.error('Erreur lors de la mise à jour du mot de passe:', errors)
+    //     }
+    // })
+    
+    // Pour l'instant, on ferme juste la modal
     showPasswordModal.value = false
+    alert('Fonctionnalité de changement de mot de passe en développement')
 }
 </script>

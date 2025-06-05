@@ -13,13 +13,81 @@ class CityController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(IndexCityRequest $request = null)
+    public function index(IndexCityRequest $request)
     {
+        // Si c'est une requête API, utiliser la même logique que pour Inertia
+        if ($request->expectsJson()) {
+            // Utiliser la même logique de filtrage que pour Inertia
+            $query = City::with('department');
+            $validated = $request->validated();
+
+            // Sorting
+            $sortField = $validated['sort'] ?? 'name';
+            $sortDirection = $validated['direction'] ?? 'asc';
+
+            // Détermine si on a besoin de join
+            $needsJoin = $sortField === 'department' ||
+                         isset($validated['department_search']);
+
+            // Join avec departments si nécessaire pour le tri ou la recherche
+            if ($needsJoin) {
+                $query->join('departments', 'cities.department_id', '=', 'departments.id')
+                      ->select('cities.*');
+            }
+
+            // Search cities filter
+            if (isset($validated['search'])) {
+                $search = $validated['search'];
+                $query->where(function($q) use ($search) {
+                    $q->where('cities.name', 'LIKE', '%' . $search . '%')
+                      ->orWhere('cities.postal_code', 'LIKE', '%' . $search . '%');
+                });
+            }
+
+            // Department search filter (LIKE search)
+            if (isset($validated['department_search']) && !isset($validated['department_id'])) {
+                $query->where('departments.name', 'LIKE', '%' . $validated['department_search'] . '%');
+            }
+
+            // Department filter (exact match)
+            if (isset($validated['department_id']) && $validated['department_id'] !== '') {
+                $query->where('cities.department_id', $validated['department_id']);
+            }
+
+            // Population filter
+            if (isset($validated['population_operator']) && isset($validated['population_value'])) {
+                $operator = $validated['population_operator'];
+                $value = $validated['population_value'];
+                
+                switch ($operator) {
+                    case 'gt':
+                        $query->where('cities.population', '>', $value);
+                        break;
+                    case 'lt':
+                        $query->where('cities.population', '<', $value);
+                        break;
+                    case 'eq':
+                        $query->where('cities.population', '=', $value);
+                        break;
+                }
+            }
+
+            // Sorting
+            if ($sortField === 'department') {
+                $query->orderBy('departments.name', $sortDirection);
+            } else {
+                $query->orderBy('cities.' . $sortField, $sortDirection);
+            }
+
+            $perPage = $validated['per_page'] ?? 10;
+            return $query->paginate($perPage);
+        }
+        
         // Version complète pour Inertia
         if (!$request) {
             $request = app(IndexCityRequest::class);
         }
-        
+
         $query = City::with('department');
 
         // Récupérer les données validées

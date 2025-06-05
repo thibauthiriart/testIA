@@ -7,7 +7,11 @@
       "Bash(find:*)",
       "Bash(php artisan route:list:*)",
       "Bash(ls:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "WebFetch(domain:www.agencesenlimousin.com)",
+      "Bash(php artisan:*)",
+      "Bash(php artisan config:clear:*)",
+      "Bash(php:*)"
     ],
     "deny": []
   }

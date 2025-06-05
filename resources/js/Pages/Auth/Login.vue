@@ -60,10 +60,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Link, useForm, usePage } from '@inertiajs/vue3'
+import { useAuthStore } from '../../stores/auth.js'
 
 const errors = usePage().props.errors
+const authStore = useAuthStore()
 
 const form = useForm({
     email: '',
@@ -72,12 +74,24 @@ const form = useForm({
 
 const processing = ref(false)
 
+// Check for token in flash data on mount
+onMounted(() => {
+    const page = usePage()
+    const token = page.props.flash?.token
+    if (token) {
+        authStore.setToken(token)
+    }
+})
+
 const login = () => {
     processing.value = true
     form.post('/login', {
         onFinish: () => {
             processing.value = false
         },
+        onSuccess: () => {
+            // Token will be set in onMounted from flash data
+        }
     })
 }
 </script>

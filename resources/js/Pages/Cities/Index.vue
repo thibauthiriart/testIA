@@ -4,7 +4,7 @@
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Gestion des Villes</h1>
-                <button 
+                <button
                     @click="openModal()"
                     class="bg-blue-500 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                 >
@@ -18,8 +18,8 @@
                                 <div class="flex flex-col">
                                     <SortableHeader
                                         label="Nom"
-                                        :is-active="filters.sort === 'name'"
-                                        :direction="filters.direction"
+                                        :is-active="currentSort === 'name'"
+                                        :direction="currentDirection"
                                         @sort="handleSort('name')"
                                     />
                                     <SearchInput
@@ -33,8 +33,8 @@
                                 <div class="flex flex-col">
                                     <SortableHeader
                                         label="Population"
-                                        :is-active="filters.sort === 'population'"
-                                        :direction="filters.direction"
+                                        :is-active="currentSort === 'population'"
+                                        :direction="currentDirection"
                                         @sort="handleSort('population')"
                                     />
                                     <div class="flex items-center mt-2 space-x-1">
@@ -63,8 +63,8 @@
                                 <div class="flex flex-col">
                                     <SortableHeader
                                         label="Département"
-                                        :is-active="filters.sort === 'department'"
-                                        :direction="filters.direction"
+                                        :is-active="currentSort === 'department'"
+                                        :direction="currentDirection"
                                         @sort="handleSort('department')"
                                     />
                                     <div class="relative mt-2">
@@ -115,13 +115,13 @@
                                 {{ city.department.name }} ({{ city.department.code }})
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <button 
+                                <button
                                     @click="openModal(city)"
                                     class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-3"
                                 >
                                     Modifier
                                 </button>
-                                <button 
+                                <button
                                     @click="confirmDelete(city)"
                                     class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
                                 >
@@ -140,20 +140,21 @@
                     v-model="perPage"
                     @update:modelValue="handlePerPageChange"
                 />
-                
+
                 <!-- Pagination -->
                 <Pagination
                     :links="cities.links"
                     :only="['cities']"
+                    @page-change="handlePageChange"
                 />
-                
+
                 <!-- Espace vide pour équilibrer la mise en page -->
                 <div v-if="!(cities.links && cities.links.length > 3)" class="w-32"></div>
             </div>
         </div>
 
         <!-- Modal -->
-        <CityForm 
+        <CityForm
             v-if="showModal"
             :city="selectedCity"
             :departments="departments"
@@ -165,8 +166,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { router, Link } from '@inertiajs/vue3'
+import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import CityForm from './CityForm.vue'
 import DataTable from '@/components/DataTable.vue'
@@ -174,12 +174,17 @@ import SortableHeader from '@/components/SortableHeader.vue'
 import SearchInput from '@/components/SearchInput.vue'
 import Pagination from '@/components/Pagination.vue'
 import ItemsPerPage from '@/components/ItemsPerPage.vue'
-import { useTableFilters } from '@/composables/useTableFilters'
+import { useApi } from '../../composables/useApi.js'
 import Swal from 'sweetalert2'
 
+const api = useApi()
+
+// Reactive data
+const cities = ref({ data: [], links: [] })
+const departments = ref([])
+const loading = ref(true)
+
 const props = defineProps({
-    cities: Object,
-    departments: Array,
     filters: Object
 })
 
@@ -192,11 +197,14 @@ const showSuggestions = ref(false)
 const perPage = ref(props.filters?.per_page || 10)
 const populationOperator = ref(props.filters?.population_operator || '')
 const populationValue = ref(props.filters?.population_value || '')
+const currentSort = ref(props.filters?.sort || 'name')
+const currentDirection = ref(props.filters?.direction || 'asc')
+const currentPage = ref(1)
 
 // Filtrer les départements pour l'autocomplétion (min 2 caractères)
 const filteredDepartments = computed(() => {
     if (departmentSearch.value.length < 2) return []
-    return props.departments.filter(dept => 
+    return departments.value.filter(dept =>
         dept.name.toLowerCase().includes(departmentSearch.value.toLowerCase())
     )
 })
@@ -213,7 +221,7 @@ const closeModal = () => {
 
 const handleSaved = () => {
     closeModal()
-    router.reload({ only: ['cities'] })
+    fetchCities()
 }
 
 const getCurrentFilters = () => ({
@@ -222,25 +230,44 @@ const getCurrentFilters = () => ({
     department_id: selectedDepartmentId.value,
     population_operator: populationOperator.value,
     population_value: populationValue.value,
-    sort: props.filters?.sort || 'nom',
-    direction: props.filters?.direction || 'asc',
-    per_page: perPage.value
+    sort: currentSort.value,
+    direction: currentDirection.value,
+    per_page: perPage.value,
+    page: currentPage.value
 })
 
-const applyFilters = (overrides = {}, options = {}) => {
-    const defaultOptions = {
-        preserveState: true,
-        preserveScroll: true,
-        only: ['cities', 'filters']
+const fetchCities = async () => {
+    try {
+        loading.value = true
+        const params = getCurrentFilters()
+        const data = await api.get('/api/cities', params)
+        // S'assurer que c'est un objet avec data et links (pagination Laravel)
+        cities.value = data || { data: [], links: [] }
+    } catch (error) {
+        console.error('Error fetching cities:', error)
+        cities.value = { data: [], links: [] }
+    } finally {
+        loading.value = false
     }
-    
-    router.get('/cities', {
-        ...getCurrentFilters(),
-        ...overrides
-    }, {
-        ...defaultOptions,
-        ...options
-    })
+}
+
+const fetchDepartments = async () => {
+    try {
+        const data = await api.get('/api/departments')
+        // S'assurer que c'est un array
+        departments.value = Array.isArray(data) ? data : []
+    } catch (error) {
+        console.error('Error fetching departments:', error)
+        departments.value = []
+    }
+}
+
+const applyFilters = (overrides = {}) => {
+    // Reset à la page 1 quand on applique des filtres (sauf si on change spécifiquement de page)
+    if (!overrides.hasOwnProperty('page')) {
+        currentPage.value = 1
+    }
+    fetchCities()
 }
 
 const handleSearch = () => {
@@ -249,18 +276,20 @@ const handleSearch = () => {
 
 const handleSort = (field) => {
     let direction = 'asc'
-    
-    if (props.filters?.sort === field) {
-        direction = props.filters.direction === 'asc' ? 'desc' : 'asc'
+
+    if (currentSort.value === field) {
+        direction = currentDirection.value === 'asc' ? 'desc' : 'asc'
     }
-    
-    applyFilters({ sort: field, direction })
+
+    currentSort.value = field
+    currentDirection.value = direction
+    applyFilters()
 }
 
 const handleDepartmentSearch = () => {
     // Si on avait un département sélectionné et que le texte a changé, on le désélectionne
     if (selectedDepartmentId.value) {
-        const selectedDept = props.departments.find(d => d.id === selectedDepartmentId.value)
+        const selectedDept = departments.value.find(d => d.id === selectedDepartmentId.value)
         if (selectedDept && departmentSearch.value !== selectedDept.name) {
             selectedDepartmentId.value = ''
             // Réactive l'autocomplétion si on a au moins 2 caractères
@@ -269,7 +298,7 @@ const handleDepartmentSearch = () => {
             }
         }
     }
-    
+
     // Recherche LIKE si pas de département spécifique sélectionné
     if (!selectedDepartmentId.value) {
         applyFilters()
@@ -280,7 +309,7 @@ const selectDepartment = (dept) => {
     departmentSearch.value = dept.name
     selectedDepartmentId.value = dept.id
     showSuggestions.value = false
-    
+
     applyFilters({
         department_id: dept.id,
         department_search: dept.name
@@ -301,16 +330,17 @@ const resetSort = () => {
     populationOperator.value = ''
     populationValue.value = ''
     perPage.value = 10
-    
-    router.get('/cities', {}, {
-        preserveState: true,
-        preserveScroll: true,
-        only: ['cities', 'filters']
-    })
+
+    fetchCities()
 }
 
 const handlePerPageChange = () => {
     applyFilters()
+}
+
+const handlePageChange = (page) => {
+    currentPage.value = page
+    applyFilters({ page })
 }
 
 const handlePopulationFilter = () => {
@@ -319,8 +349,8 @@ const handlePopulationFilter = () => {
     }
 }
 
-const confirmDelete = (city) => {
-    Swal.fire({
+const confirmDelete = async (city) => {
+    const result = await Swal.fire({
         title: 'Êtes-vous sûr?',
         text: `Voulez-vous vraiment supprimer la ville "${city.name}"?`,
         icon: 'warning',
@@ -329,25 +359,22 @@ const confirmDelete = (city) => {
         cancelButtonColor: '#3085d6',
         confirmButtonText: 'Oui, supprimer!',
         cancelButtonText: 'Annuler'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            router.delete(`/cities/${city.id}`, {
-                onSuccess: () => {
-                    Swal.fire(
-                        'Supprimé!',
-                        'La ville a été supprimée.',
-                        'success'
-                    )
-                },
-                onError: () => {
-                    Swal.fire(
-                        'Erreur!',
-                        'Une erreur est survenue lors de la suppression.',
-                        'error'
-                    )
-                }
-            })
-        }
     })
+
+    if (result.isConfirmed) {
+        try {
+            await api.delete(`/api/cities/${city.id}`)
+            Swal.fire('Supprimé!', 'La ville a été supprimée.', 'success')
+            fetchCities()
+        } catch (error) {
+            Swal.fire('Erreur!', 'Une erreur est survenue lors de la suppression.', 'error')
+        }
+    }
 }
+
+// Fetch initial data
+onMounted(() => {
+    fetchCities()
+    fetchDepartments()
+})
 </script>
