@@ -11,7 +11,8 @@ class IndexCityRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true; // Autoriser tous les utilisateurs pour l'instant
+        // Only admins can access cities management
+        return auth()->check() && auth()->user()->hasRole('admin');
     }
 
     /**

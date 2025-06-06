@@ -11,7 +11,8 @@ class StoreDepartmentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        // Only admins can create departments
+        return auth()->check() && auth()->user()->hasRole('admin');
     }
 
     /**

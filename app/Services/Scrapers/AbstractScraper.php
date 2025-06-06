@@ -3,6 +3,7 @@
 namespace App\Services\Scrapers;
 
 use App\Models\Property;
+use Exception;
 use Symfony\Component\DomCrawler\Crawler;
 use Illuminate\Support\Facades\Log;
 
@@ -24,9 +25,9 @@ abstract class AbstractScraper
     }
 
     abstract public function scrapeListingPage(string $url): array;
-    
+
     abstract public function scrapePropertyDetails(string $url): ?array;
-    
+
     abstract protected function parseProperty(Crawler $crawler, string $url): ?array;
 
     protected function fetchPage(string $url): ?Crawler
@@ -41,33 +42,33 @@ abstract class AbstractScraper
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
             curl_setopt($ch, CURLOPT_ENCODING, ''); // Handle gzip/deflate
-            
+
             $content = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $error = curl_error($ch);
             curl_close($ch);
-            
+
             if ($content === false || !empty($error)) {
-                throw new \Exception("cURL error: " . $error);
+                throw new ("cURL error: " . $error);
             }
-            
+
             if ($httpCode >= 400) {
-                throw new \Exception("HTTP error: " . $httpCode);
+                throw new ("HTTP error: " . $httpCode);
             }
-            
+
             Log::info("Page fetched successfully", [
                 'url' => $url,
                 'http_code' => $httpCode,
                 'content_length' => strlen($content)
             ]);
-            
+
             return new Crawler($content);
-        } catch (\Exception $e) {
-            Log::error("Error fetching page: {$url}", [
+        } catch (Exception $e) {
+            Log::error("Error fetching page: $url", [
                 'error' => $e->getMessage(),
                 'source' => $this->source,
             ]);
-            
+
             return null;
         }
     }
@@ -97,7 +98,7 @@ abstract class AbstractScraper
                 } else {
                     $results['updated']++;
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $results['failed']++;
                 Log::error("Error saving property", [
                     'error' => $e->getMessage(),
@@ -118,7 +119,7 @@ abstract class AbstractScraper
 
         $price = preg_replace('/[^\d,.]/', '', $price);
         $price = str_replace(',', '.', $price);
-        
+
         return (float) $price;
     }
 
@@ -130,7 +131,7 @@ abstract class AbstractScraper
 
         $surface = preg_replace('/[^\d,.]/', '', $surface);
         $surface = str_replace(',', '.', $surface);
-        
+
         return (float) $surface;
     }
 
@@ -146,7 +147,7 @@ abstract class AbstractScraper
     protected function extractImages(Crawler $crawler, string $selector): array
     {
         $images = [];
-        
+
         $crawler->filter($selector)->each(function (Crawler $node) use (&$images) {
             $src = $node->attr('src') ?? $node->attr('data-src');
             if ($src) {
@@ -162,11 +163,11 @@ abstract class AbstractScraper
         if (str_starts_with($url, '//')) {
             return 'https:' . $url;
         }
-        
+
         if (!str_starts_with($url, 'http')) {
             return 'https://' . ltrim($url, '/');
         }
-        
+
         return $url;
     }
 }

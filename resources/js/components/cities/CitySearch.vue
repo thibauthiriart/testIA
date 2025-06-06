@@ -117,7 +117,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
-import { useAuthStore } from '../stores/auth.js'
+import { useAuthStore } from '../../stores/auth.js'
 
 const props = defineProps({
     cities: {

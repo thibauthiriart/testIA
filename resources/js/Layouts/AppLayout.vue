@@ -73,6 +73,18 @@
                             </Link>
 
                             <Link
+                                href="/scrapers/agences-en-limousin"
+                                :class="[
+                                    'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out',
+                                    page.url.startsWith('/properties/scraper')
+                                        ? 'border-indigo-400 text-gray-900 dark:text-white focus:outline-none focus:border-indigo-700'
+                                        : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 focus:outline-none focus:text-gray-700 dark:focus:text-white focus:border-gray-300'
+                                ]"
+                            >
+                                Scraper
+                            </Link>
+
+                            <Link
                                 v-if="$page.props.auth?.user?.roles?.some(role => role.name === 'admin')"
                                 href="/users"
                                 :class="[
@@ -85,17 +97,6 @@
                                 Utilisateurs
                             </Link>
 
-                            <Link
-                                href="/scrapers/agences-en-limousin"
-                                :class="[
-                                    'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out',
-                                    page.url.startsWith('/properties/scraper')
-                                        ? 'border-indigo-400 text-gray-900 dark:text-white focus:outline-none focus:border-indigo-700'
-                                        : 'border-transparent text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white hover:border-gray-300 focus:outline-none focus:text-gray-700 dark:focus:text-white focus:border-gray-300'
-                                ]"
-                            >
-                                Scraper
-                            </Link>
                         </div>
                     </div>
 

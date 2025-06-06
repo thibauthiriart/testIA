@@ -11,7 +11,8 @@ class UpdateDepartmentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        // Only admins can update departments
+        return auth()->check() && auth()->user()->hasRole('admin');
     }
 
     /**

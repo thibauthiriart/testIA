@@ -5,17 +5,22 @@ namespace App\Http\Controllers;
 use App\Models\Property;
 use App\Models\City;
 use App\Services\CityService;
+use App\Http\Requests\IndexPropertyRequest;
+use App\Http\Requests\SearchPropertyByLocationRequest;
+use App\Http\Requests\StorePropertyRequest;
+use App\Http\Requests\UpdatePropertyRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class PropertyController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexPropertyRequest $request)
     {
+        $validated = $request->validated();
         $query = Property::query()->with('cityModel');
 
         if ($request->filled('search')) {
-            $search = $request->input('search');
+            $search = $validated['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
                     ->orWhereHas('cityModel', function ($cityQuery) use ($search) {
@@ -26,39 +31,39 @@ class PropertyController extends Controller
         }
 
         if ($request->filled('city_id')) {
-            $query->where('city_id', $request->input('city_id'));
+            $query->where('city_id', $validated['city_id']);
         }
 
         if ($request->filled('min_price')) {
-            $query->where('price', '>=', $request->input('min_price'));
+            $query->where('price', '>=', $validated['min_price']);
         }
 
         if ($request->filled('max_price')) {
-            $query->where('price', '<=', $request->input('max_price'));
+            $query->where('price', '<=', $validated['max_price']);
         }
 
         if ($request->filled('min_surface')) {
-            $query->where('surface', '>=', $request->input('min_surface'));
+            $query->where('surface', '>=', $validated['min_surface']);
         }
 
         if ($request->filled('max_surface')) {
-            $query->where('surface', '<=', $request->input('max_surface'));
+            $query->where('surface', '<=', $validated['max_surface']);
         }
 
         if ($request->filled('rooms')) {
-            $query->where('rooms', $request->input('rooms'));
+            $query->where('rooms', $validated['rooms']);
         }
 
         if ($request->filled('property_type')) {
-            $query->where('property_type', $request->input('property_type'));
+            $query->where('property_type', $validated['property_type']);
         }
 
         if ($request->filled('transaction_type')) {
-            $query->where('transaction_type', $request->input('transaction_type'));
+            $query->where('transaction_type', $validated['transaction_type']);
         }
 
-        $sortField = $request->input('sort', 'scraped_at');
-        $sortDirection = $request->input('direction', 'desc');
+        $sortField = $validated['sort'] ?? 'scraped_at';
+        $sortDirection = $validated['direction'] ?? 'desc';
         $query->orderBy($sortField, $sortDirection);
 
         $properties = $query->paginate(20)->withQueryString();
@@ -100,15 +105,35 @@ class PropertyController extends Controller
             'property' => $property,
         ]);
     }
-    
-    public function searchByLocation(Request $request, CityService $cityService)
+
+    public function store(StorePropertyRequest $request)
     {
-        $validated = $request->validate([
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
-            'city' => 'nullable|string',
-            'radius' => 'integer|min:1|max:100'
-        ]);
+        $validated = $request->validated();
+
+        Property::create($validated);
+
+        return redirect()->route('properties.index')->with('success', 'Propriété ajoutée avec succès.');
+    }
+
+    public function update(UpdatePropertyRequest $request, Property $property)
+    {
+        $validated = $request->validated();
+
+        $property->update($validated);
+
+        return redirect()->route('properties.index')->with('success', 'Propriété modifiée avec succès.');
+    }
+
+    public function destroy(Property $property)
+    {
+        $property->delete();
+
+        return redirect()->route('properties.index')->with('success', 'Propriété supprimée avec succès.');
+    }
+    
+    public function searchByLocation(SearchPropertyByLocationRequest $request, CityService $cityService)
+    {
+        $validated = $request->validated();
         
         $radius = $validated['radius'] ?? 10; // Default 10km
         

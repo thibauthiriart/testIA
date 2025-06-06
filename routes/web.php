@@ -26,7 +26,10 @@ Route::middleware([\App\Http\Middleware\AuthenticateWithTokenOrSession::class])-
 
     // Properties routes
     Route::get('/properties', [PropertyController::class, 'index'])->name('properties.index');
+    Route::post('/properties', [PropertyController::class, 'store'])->name('properties.store');
     Route::get('/properties/{property}', [PropertyController::class, 'show'])->name('properties.show');
+    Route::put('/properties/{property}', [PropertyController::class, 'update'])->name('properties.update');
+    Route::delete('/properties/{property}', [PropertyController::class, 'destroy'])->name('properties.destroy');
 
     // Scraper routes
     Route::get('/scrapers/agences-en-limousin', [\App\Http\Controllers\Scrapers\AgencesEnLimousinScraperController::class, 'index'])->name('scrapers.agences-en-limousin');

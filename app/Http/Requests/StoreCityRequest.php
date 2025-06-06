@@ -11,7 +11,8 @@ class StoreCityRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        // Only admins can create cities
+        return auth()->check() && auth()->user()->hasRole('admin');
     }
 
     /**

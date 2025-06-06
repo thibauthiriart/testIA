@@ -59,6 +59,7 @@
                 <Pagination
                     :links="departments.links"
                     :only="['departments']"
+                    @page-change="handlePageChange"
                 />
             </div>
         </div>
@@ -79,7 +80,7 @@ import { ref } from 'vue'
 import { router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import DepartmentForm from './DepartmentForm.vue'
-import Pagination from '@/components/Pagination.vue'
+import Pagination from '@/components/common/Pagination.vue'
 import Swal from 'sweetalert2'
 
 const props = defineProps({
@@ -133,6 +134,14 @@ const confirmDelete = (department) => {
                 }
             })
         }
+    })
+}
+
+const handlePageChange = (page) => {
+    router.get('/departments', { page }, {
+        preserveState: true,
+        preserveScroll: true,
+        only: ['departments']
     })
 }
 </script>
